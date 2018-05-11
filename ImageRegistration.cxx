@@ -12,10 +12,10 @@
 #include "itkSpatialObjectToImageFilter.h"
 #include "itkTranslationTransform.h"
  
-const    unsigned int    Dimension = 2;
-typedef  unsigned char           PixelType;
+const unsigned int Dimension = 2;
+typedef unsigned char PixelType;
  
-typedef itk::Image< PixelType, Dimension >  ImageType;
+typedef itk::Image< PixelType, Dimension> ImageType;
  
 static void CreateEllipseImage(ImageType::Pointer image);
 static void CreateSphereImage(ImageType::Pointer image);
@@ -27,84 +27,77 @@ int main(int, char *[] )
  
   //  An optimizer is required to explore the parameter space of the transform
   //  in search of optimal values of the metric.
-  typedef itk::RegularStepGradientDescentOptimizer       OptimizerType;
+  typedef itk::RegularStepGradientDescentOptimizer OptimizerType;
  
   //  The metric will compare how well the two images match each other. Metric
   //  types are usually parameterized by the image types as it can be seen in
   //  the following type declaration.
-  typedef itk::MeanSquaresImageToImageMetric< 
-      ImageType,
-      ImageType >    MetricType;
+  typedef itk::MeanSquaresImageToImageMetric<ImageType, ImageType> MetricType;
  
   //  Finally, the type of the interpolator is declared. The interpolator will
   //  evaluate the intensities of the moving image at non-grid positions.
-  typedef itk:: LinearInterpolateImageFunction<
-      ImageType,
-      double          >    InterpolatorType;
+  typedef itk:: LinearInterpolateImageFunction<ImageType, double> InterpolatorType;
  
   //  The registration method type is instantiated using the types of the
   //  fixed and moving images. This class is responsible for interconnecting
   //  all the components that we have described so far.
-  typedef itk::ImageRegistrationMethod<
-      ImageType,
-      ImageType >    RegistrationType;
+  typedef itk::ImageRegistrationMethod<ImageType, ImageType> RegistrationType;
  
   // Create components
-  MetricType::Pointer         metric        = MetricType::New();
-  TransformType::Pointer      transform     = TransformType::New();
-  OptimizerType::Pointer      optimizer     = OptimizerType::New();
-  InterpolatorType::Pointer   interpolator  = InterpolatorType::New();
-  RegistrationType::Pointer   registration  = RegistrationType::New();
+  MetricType::Pointer metric = MetricType::New();
+  TransformType::Pointer transform = TransformType::New();
+  OptimizerType::Pointer optimizer = OptimizerType::New();
+  InterpolatorType::Pointer interpolator = InterpolatorType::New();
+  RegistrationType::Pointer registration = RegistrationType::New();
  
   // Each component is now connected to the instance of the registration method.
-  registration->SetMetric(        metric        );
-  registration->SetOptimizer(     optimizer     );
-  registration->SetTransform(     transform     );
-  registration->SetInterpolator(  interpolator  );
+  registration->SetMetric(metric);
+  registration->SetOptimizer(optimizer);
+  registration->SetTransform(transform);
+  registration->SetInterpolator(interpolator);
  
   // Get the two images
-  ImageType::Pointer  fixedImage  = ImageType::New();
+  ImageType::Pointer fixedImage = ImageType::New();
   ImageType::Pointer movingImage = ImageType::New();
  
   CreateSphereImage(fixedImage);
   CreateEllipseImage(movingImage);
  
   // Write the two synthetic inputs
-  typedef itk::ImageFileWriter< ImageType >  WriterType;
+  typedef itk::ImageFileWriter<ImageType> WriterType;
  
-  WriterType::Pointer      fixedWriter =  WriterType::New();
+  WriterType::Pointer fixedWriter = WriterType::New();
   fixedWriter->SetFileName("fixed.png");
-  fixedWriter->SetInput( fixedImage);
+  fixedWriter->SetInput(fixedImage);
   fixedWriter->Update();
  
-  WriterType::Pointer      movingWriter =  WriterType::New();
+  WriterType::Pointer movingWriter = WriterType::New();
   movingWriter->SetFileName("moving.png");
-  movingWriter->SetInput( movingImage);
+  movingWriter->SetInput(movingImage);
   movingWriter->Update();
  
   // Set the registration inputs
   registration->SetFixedImage(fixedImage);
   registration->SetMovingImage(movingImage);
  
-  registration->SetFixedImageRegion(
-    fixedImage->GetLargestPossibleRegion() );
+  registration->SetFixedImageRegion(fixedImage->GetLargestPossibleRegion());
  
   //  Initialize the transform
   typedef RegistrationType::ParametersType ParametersType;
-  ParametersType initialParameters( transform->GetNumberOfParameters() );
+  ParametersType initialParameters(transform->GetNumberOfParameters());
  
   initialParameters[0] = 0.0;  // Initial offset along X
   initialParameters[1] = 0.0;  // Initial offset along Y
  
-  registration->SetInitialTransformParameters( initialParameters );
+  registration->SetInitialTransformParameters(initialParameters);
  
-  optimizer->SetMaximumStepLength( 4.00 );
-  optimizer->SetMinimumStepLength( 0.01 );
+  optimizer->SetMaximumStepLength(4.00);
+  optimizer->SetMinimumStepLength(0.01);
  
   // Set a stopping criterion
-  optimizer->SetNumberOfIterations( 200 );
+  optimizer->SetNumberOfIterations(200);
  
-  // Connect an observer
+  //Connect an observer
   //CommandIterationUpdate::Pointer observer = CommandIterationUpdate::New();
   //optimizer->AddObserver( itk::IterationEvent(), observer );
  
@@ -112,9 +105,9 @@ int main(int, char *[] )
   {
     registration->Update();
   }
-  catch( itk::ExceptionObject & err )
+  catch(itk::ExceptionObject & err)
   {
-    std::cerr << "ExceptionObject caught !" << std::endl;
+    std::cerr << "ExceptionObject caught!" << std::endl;
     std::cerr << err << std::endl;
     return EXIT_FAILURE;
   }
@@ -162,14 +155,12 @@ int main(int, char *[] )
   //  the output type since it is likely that the transformed moving image
   //  will be compared with the fixed image.
  
-  typedef itk::ResampleImageFilter<
-      ImageType,
-      ImageType >    ResampleFilterType;
+  typedef itk::ResampleImageFilter<ImageType, ImageType> ResampleFilterType;
  
   //  A resampling filter is created and the moving image is connected as  its input.
  
   ResampleFilterType::Pointer resampler = ResampleFilterType::New();
-  resampler->SetInput( movingImage);
+  resampler->SetInput(movingImage);
  
   //  The Transform that is produced as output of the Registration method is
   //  also passed as input to the resampling filter. Note the use of the
@@ -179,7 +170,7 @@ int main(int, char *[] )
   //  this construction you may want to read the documentation of the
   //  \doxygen{DataObjectDecorator}.
  
-  resampler->SetTransform( registration->GetOutput()->Get() );
+  resampler->SetTransform(registration->GetOutput()->Get());
  
   //  As described in Section \ref{sec:ResampleImageFilter}, the
   //  ResampleImageFilter requires additional parameters to be specified, in
@@ -187,11 +178,11 @@ int main(int, char *[] )
   //  pixel value is also set to a distinct gray level in order to highlight
   //  the regions that are mapped outside of the moving image.  
  
-  resampler->SetSize( fixedImage->GetLargestPossibleRegion().GetSize() );
-  resampler->SetOutputOrigin(  fixedImage->GetOrigin() );
-  resampler->SetOutputSpacing( fixedImage->GetSpacing() );
-  resampler->SetOutputDirection( fixedImage->GetDirection() );
-  resampler->SetDefaultPixelValue( 100 );
+  resampler->SetSize(fixedImage->GetLargestPossibleRegion().GetSize());
+  resampler->SetOutputOrigin(fixedImage->GetOrigin());
+  resampler->SetOutputSpacing(fixedImage->GetSpacing());
+  resampler->SetOutputDirection(fixedImage->GetDirection());
+  resampler->SetDefaultPixelValue(100);
  
   //  The output of the filter is passed to a writer that will store the
   //  image in a file. An \doxygen{CastImageFilter} is used to convert the
@@ -199,17 +190,15 @@ int main(int, char *[] )
   //  writer. The cast and writer filters are instantiated below.
  
   typedef unsigned char OutputPixelType;
-  typedef itk::Image< OutputPixelType, Dimension > OutputImageType;
-  typedef itk::CastImageFilter<
-      ImageType,
-      ImageType > CastFilterType;
+  typedef itk::Image<OutputPixelType, Dimension> OutputImageType;
+  typedef itk::CastImageFilter<ImageType, ImageType> CastFilterType;
  
-  WriterType::Pointer      writer =  WriterType::New();
-  CastFilterType::Pointer  caster =  CastFilterType::New();
+  WriterType::Pointer writer = WriterType::New();
+  CastFilterType::Pointer caster = CastFilterType::New();
   writer->SetFileName("output.png");
  
-  caster->SetInput( resampler->GetOutput() );
-  writer->SetInput( caster->GetOutput()   );
+  caster->SetInput(resampler->GetOutput());
+  writer->SetInput(caster->GetOutput());
   writer->Update();
  
   /*
@@ -218,15 +207,12 @@ int main(int, char *[] )
   //  the difference between homologous pixels of its two input images.
  
  
-  typedef itk::SubtractImageFilter<
-      FixedImageType,
-      FixedImageType,
-      FixedImageType > DifferenceFilterType;
+  typedef itk::SubtractImageFilter<FixedImageType, FixedImageType, FixedImageType> DifferenceFilterType;
  
   DifferenceFilterType::Pointer difference = DifferenceFilterType::New();
  
-  difference->SetInput1( fixedImageReader->GetOutput() );
-  difference->SetInput2( resampler->GetOutput() );
+  difference->SetInput1(fixedImageReader->GetOutput());
+  difference->SetInput2(resampler->GetOutput());
   */
  
  
@@ -235,49 +221,47 @@ int main(int, char *[] )
  
 void CreateEllipseImage(ImageType::Pointer image)
 {
-  typedef itk::EllipseSpatialObject< Dimension >   EllipseType;
+  typedef itk::EllipseSpatialObject<Dimension> EllipseType;
  
-  typedef itk::SpatialObjectToImageFilter<
-    EllipseType, ImageType >   SpatialObjectToImageFilterType;
+  typedef itk::SpatialObjectToImageFilter<EllipseType, ImageType> SpatialObjectToImageFilterType;
  
-  SpatialObjectToImageFilterType::Pointer imageFilter =
-    SpatialObjectToImageFilterType::New();
+  SpatialObjectToImageFilterType::Pointer imageFilter = SpatialObjectToImageFilterType::New();
  
   ImageType::SizeType size;
-  size[ 0 ] =  100;
-  size[ 1 ] =  100;
+  size[0] =  100;
+  size[1] =  100;
  
-  imageFilter->SetSize( size );
+  imageFilter->SetSize(size);
  
   ImageType::SpacingType spacing;
   spacing.Fill(1);
   imageFilter->SetSpacing(spacing);
  
-  EllipseType::Pointer ellipse    = EllipseType::New();
+  EllipseType::Pointer ellipse = EllipseType::New();
   EllipseType::ArrayType radiusArray;
   radiusArray[0] = 10;
   radiusArray[1] = 20;
   ellipse->SetRadius(radiusArray);
  
-  typedef EllipseType::TransformType                 TransformType;
+  typedef EllipseType::TransformType TransformType;
   TransformType::Pointer transform = TransformType::New();
   transform->SetIdentity();
  
-  TransformType::OutputVectorType  translation;
-  TransformType::CenterType        center;
+  TransformType::OutputVectorType translation;
+  TransformType::CenterType center;
  
-  translation[ 0 ] =  65;
-  translation[ 1 ] =  45;
-  transform->Translate( translation, false );
+  translation[0] =  65;
+  translation[1] =  45;
+  transform->Translate(translation, false);
  
-  ellipse->SetObjectToParentTransform( transform );
+  ellipse->SetObjectToParentTransform(transform);
  
   imageFilter->SetInput(ellipse);
  
   ellipse->SetDefaultInsideValue(255);
   ellipse->SetDefaultOutsideValue(0);
-  imageFilter->SetUseObjectValue( true );
-  imageFilter->SetOutsideValue( 0 );
+  imageFilter->SetUseObjectValue(true);
+  imageFilter->SetOutsideValue(0);
  
   imageFilter->Update();
  
@@ -287,49 +271,47 @@ void CreateEllipseImage(ImageType::Pointer image)
  
 void CreateSphereImage(ImageType::Pointer image)
 {
- typedef itk::EllipseSpatialObject< Dimension >   EllipseType;
+ typedef itk::EllipseSpatialObject<Dimension> EllipseType;
  
-  typedef itk::SpatialObjectToImageFilter<
-    EllipseType, ImageType >   SpatialObjectToImageFilterType;
+  typedef itk::SpatialObjectToImageFilter<EllipseType, ImageType> SpatialObjectToImageFilterType;
  
-  SpatialObjectToImageFilterType::Pointer imageFilter =
-    SpatialObjectToImageFilterType::New();
+  SpatialObjectToImageFilterType::Pointer imageFilter = SpatialObjectToImageFilterType::New();
  
   ImageType::SizeType size;
-  size[ 0 ] =  100;
-  size[ 1 ] =  100;
+  size[0] =  100;
+  size[1] =  100;
  
-  imageFilter->SetSize( size );
+  imageFilter->SetSize(size);
  
   ImageType::SpacingType spacing;
   spacing.Fill(1);
   imageFilter->SetSpacing(spacing);
  
-  EllipseType::Pointer ellipse    = EllipseType::New();
+  EllipseType::Pointer ellipse = EllipseType::New();
   EllipseType::ArrayType radiusArray;
   radiusArray[0] = 10;
   radiusArray[1] = 10;
   ellipse->SetRadius(radiusArray);
  
-  typedef EllipseType::TransformType                 TransformType;
+  typedef EllipseType::TransformType TransformType;
   TransformType::Pointer transform = TransformType::New();
   transform->SetIdentity();
  
-  TransformType::OutputVectorType  translation;
-  TransformType::CenterType        center;
+  TransformType::OutputVectorType translation;
+  TransformType::CenterType center;
  
-  translation[ 0 ] =  50;
-  translation[ 1 ] =  50;
-  transform->Translate( translation, false );
+  translation[0] =  50;
+  translation[1] =  50;
+  transform->Translate(translation, false);
  
-  ellipse->SetObjectToParentTransform( transform );
+  ellipse->SetObjectToParentTransform(transform);
  
   imageFilter->SetInput(ellipse);
  
   ellipse->SetDefaultInsideValue(255);
   ellipse->SetDefaultOutsideValue(0);
-  imageFilter->SetUseObjectValue( true );
-  imageFilter->SetOutsideValue( 0 );
+  imageFilter->SetUseObjectValue(true);
+  imageFilter->SetOutsideValue(0);
  
   imageFilter->Update();
  
